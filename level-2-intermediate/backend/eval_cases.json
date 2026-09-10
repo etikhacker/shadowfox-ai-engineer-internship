@@ -1,0 +1,10 @@
+[
+  {"text": "I was charged twice for my subscription.", "expected_category": "billing"},
+  {"text": "The login button crashes the app.", "expected_category": "bug"},
+  {"text": "Please add dark mode to the dashboard.", "expected_category": "feature"},
+  {"text": "Can you tell me your office hours?", "expected_category": "other"},
+  {"text": "My invoice has the wrong amount.", "expected_category": "billing"},
+  {"text": "The export endpoint returns a 500 error.", "expected_category": "bug"},
+  {"text": "It would be useful to filter projects by owner.", "expected_category": "feature"},
+  {"text": "I need help with something unrelated to the product.", "expected_category": "other"}
+]
