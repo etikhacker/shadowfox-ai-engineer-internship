@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Unpack — Concept Explainer for Students</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #f5f3ee;
+    --panel: #ffffff;
+    --ink: #1c2541;
+    --ink-soft: #4a5170;
+    --accent: #a97d3f;
+    --accent-soft: #eee2cd;
+    --line: #ddd7c8;
+    --error: #a8402f;
+    --error-bg: #fbecea;
+    --radius: 10px;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background: var(--paper);
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(28,37,65,0.05) 1px, transparent 0);
+    background-size: 22px 22px;
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+  header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap: 16px;
+    margin-bottom: 36px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 20px;
+  }
+  .lang-toggle{
+    display:flex;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .lang-toggle button{
+    padding: 7px 13px;
+    font-family: 'Inter', sans-serif;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: none;
+    background: var(--panel);
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .lang-toggle button + button{ border-left: 1px solid var(--line); }
+  .lang-toggle button.active{ background: var(--ink); color: #fff; }
+  header h1{
+    font-family: 'Lora', serif;
+    font-weight: 600;
+    font-size: 30px;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  header h1 span{ color: var(--accent); font-style: italic; font-weight: 500; }
+  header p{
+    margin: 4px 0 0;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    max-width: 34ch;
+  }
+  .layout{
+    display:grid;
+    grid-template-columns: 360px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+  @media (max-width: 780px){
+    .layout{ grid-template-columns: 1fr; }
+  }
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+  .field{ margin-bottom: 18px; }
+  .field:last-child{ margin-bottom: 0; }
+  label{
+    display:block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  label small{
+    font-weight: 400;
+    color: var(--ink-soft);
+    margin-left: 4px;
+  }
+  input[type="text"], input[type="password"], textarea, select{
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+    font-size: 14.5px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--paper);
+    color: var(--ink);
+    resize: vertical;
+  }
+  input:focus, textarea:focus, select:focus{
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+    background: #fff;
+  }
+  textarea#topic{ min-height: 70px; }
+  textarea#context{ min-height: 70px; }
+  .level-row{
+    display:flex;
+    gap: 8px;
+  }
+  .level-row button{
+    flex:1;
+    padding: 9px 6px;
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    color: var(--ink-soft);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .level-row button.active{
+    background: var(--ink);
+    border-color: var(--ink);
+    color: #fff;
+  }
+  details{
+    margin-top: 4px;
+    font-size: 13px;
+  }
+  details summary{
+    cursor: pointer;
+    color: var(--ink-soft);
+    font-weight: 500;
+  }
+  details .key-help{
+    margin-top: 10px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+  }
+  details a{ color: var(--accent); }
+  .checkbox-row{
+    display:flex;
+    align-items:center;
+    gap: 7px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .checkbox-row input{ width:auto; }
+  .submit-btn{
+    width: 100%;
+    margin-top: 22px;
+    padding: 12px;
+    background: var(--ink);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 600;
+    font-size: 14.5px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  .submit-btn:hover{ background: #141b34; }
+  .submit-btn:disabled{ background: #9a9fb3; cursor: not-allowed; }
+
+  .output-panel{ min-height: 420px; }
+  .output-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 16px;
+  }
+  .output-head h2{
+    font-family:'Lora', serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin:0;
+  }
+  .pill{
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+  .empty-state{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap: 6px;
+    color: var(--ink-soft);
+    padding: 60px 10px;
+    text-align:left;
+  }
+  .empty-state strong{ color: var(--ink); font-family:'Lora', serif; font-size: 17px; font-weight:600; }
+
+  .spinner-state{
+    display:flex;
+    align-items:center;
+    gap: 12px;
+    color: var(--ink-soft);
+    padding: 60px 10px;
+    font-size: 14px;
+  }
+  .spinner{
+    width: 18px; height: 18px;
+    border: 2px solid var(--line);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+  }
+  @keyframes spin{ to{ transform: rotate(360deg); } }
+
+  .error-box{
+    background: var(--error-bg);
+    border: 1px solid #f0cec8;
+    color: var(--error);
+    padding: 14px 16px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .error-box strong{ display:block; margin-bottom: 3px; }
+
+  .explanation{
+    animation: rise .35s ease;
+  }
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(6px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  .explanation h3{
+    font-family: 'Lora', serif;
+    font-size: 15.5px;
+    font-weight: 600;
+    margin: 20px 0 8px;
+    color: var(--ink);
+  }
+  .explanation h3:first-child{ margin-top: 0; }
+  .explanation p{ margin: 0 0 10px; font-size: 15px; color: var(--ink); }
+  .explanation ul{ margin: 0 0 10px; padding-left: 20px; }
+  .explanation li{ margin-bottom: 6px; font-size: 15px; }
+  .explanation strong{ color: var(--ink); }
+  .topic-line{
+    font-family:'Lora', serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+    border-bottom: 1px dashed var(--line);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Un<span>pack</span></h1>
+      <p data-i18n="tagline">Paste a topic you're stuck on. Get a clear, level-adjusted explanation.</p>
+    </div>
+    <div class="lang-toggle" id="langToggle">
+      <button type="button" data-lang="en" class="active">EN</button>
+      <button type="button" data-lang="az">AZ</button>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- INPUT PANEL -->
+    <div class="panel">
+      <div class="field">
+        <label for="topic" data-i18n="topicLabel">What do you need explained?</label>
+        <textarea id="topic" data-i18n-placeholder="topicPlaceholder" placeholder="e.g. Why does binary search need a sorted array?"></textarea>
+      </div>
+
+      <div class="field">
+        <label data-i18n="depthLabel">Explanation depth</label>
+        <div class="level-row" id="levelRow">
+          <button type="button" data-level="beginner" data-i18n="levelBeginner">Beginner</button>
+          <button type="button" data-level="intermediate" class="active" data-i18n="levelIntermediate">Intermediate</button>
+          <button type="button" data-level="advanced" data-i18n="levelAdvanced">Advanced</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="context"><span data-i18n="contextLabel">Extra context</span> <small data-i18n="optional">(optional)</small></label>
+        <textarea id="context" data-i18n-placeholder="contextPlaceholder" placeholder="e.g. this is for a first-year data structures course"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="apiKey" data-i18n="apiKeyLabel">Gemini API key</label>
+        <input type="password" id="apiKey" data-i18n-placeholder="apiKeyPlaceholder" placeholder="Paste your Gemini API key" />
+        <div class="checkbox-row">
+          <input type="checkbox" id="rememberKey" />
+          <label for="rememberKey" style="margin:0; font-weight:400;" data-i18n="rememberKey">Remember key in this browser</label>
+        </div>
+        <details>
+          <summary data-i18n="keyHelpSummary">Where do I get a key?</summary>
+          <div class="key-help">
+            <span data-i18n="keyHelpBefore">Create a free key at</span>
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>.
+            <span data-i18n="keyHelpAfter">The key is only used from your browser to call Gemini directly — this app has no backend and never stores or sends it anywhere else.</span>
+          </div>
+        </details>
+      </div>
+
+      <button class="submit-btn" id="submitBtn" data-i18n="submitBtn">Explain it</button>
+    </div>
+
+    <!-- OUTPUT PANEL -->
+    <div class="panel output-panel">
+      <div class="output-head">
+        <h2 data-i18n="outputTitle">Explanation</h2>
+        <span class="pill" id="levelPill">Intermediate</span>
+      </div>
+      <div id="output">
+        <div class="empty-state">
+          <strong data-i18n="emptyTitle">Nothing to show yet</strong>
+          <span data-i18n="emptyBody">Enter a topic on the left and hit "Explain it" — your explanation will appear here.</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const topicEl = document.getElementById('topic');
+  const contextEl = document.getElementById('context');
+  const apiKeyEl = document.getElementById('apiKey');
+  const rememberEl = document.getElementById('rememberKey');
+  const submitBtn = document.getElementById('submitBtn');
+  const outputEl = document.getElementById('output');
+  const levelRow = document.getElementById('levelRow');
+  const levelPill = document.getElementById('levelPill');
+  const langToggle = document.getElementById('langToggle');
+
+  let level = 'intermediate';
+  let lang = 'en';
+
+  const I18N = {
+    en: {
+      langName: 'English',
+      tagline: "Paste a topic you're stuck on. Get a clear, level-adjusted explanation.",
+      topicLabel: 'What do you need explained?',
+      topicPlaceholder: 'e.g. Why does binary search need a sorted array?',
+      depthLabel: 'Explanation depth',
+      levelBeginner: 'Beginner',
+      levelIntermediate: 'Intermediate',
+      levelAdvanced: 'Advanced',
+      contextLabel: 'Extra context',
+      optional: '(optional)',
+      contextPlaceholder: 'e.g. this is for a first-year data structures course',
+      apiKeyLabel: 'Gemini API key',
+      apiKeyPlaceholder: 'Paste your Gemini API key',
+      rememberKey: 'Remember key in this browser',
+      keyHelpSummary: 'Where do I get a key?',
+      keyHelpBefore: 'Create a free key at',
+      keyHelpAfter: 'The key is only used from your browser to call Gemini directly — this app has no backend and never stores or sends it anywhere else.',
+      submitBtn: 'Explain it',
+      submitBtnLoading: 'Thinking…',
+      outputTitle: 'Explanation',
+      emptyTitle: 'Nothing to show yet',
+      emptyBody: 'Enter a topic on the left and hit "Explain it" — your explanation will appear here.',
+      loadingText: 'Generating your explanation…',
+      errNoTopicTitle: 'Nothing to explain yet',
+      errNoTopicBody: 'Type a concept or question in the box on the left first.',
+      errNoKeyTitle: 'Missing API key',
+      errNoKeyBody: 'Paste a Gemini API key so the app can generate a response.',
+      errRejectedTitle: 'Request rejected',
+      errRejectedBody: 'Check that your API key is valid. Details:',
+      errRateTitle: 'Rate limit hit',
+      errRateBody: 'Too many requests right now — wait a moment and try again.',
+      errGenericTitle: 'Something went wrong',
+      errEmptyTitle: 'Empty response',
+      errEmptyBody: 'The model returned no text. Try rephrasing your topic and try again.',
+      errNetworkTitle: 'Network error',
+      errNetworkBody: 'Could not reach the Gemini API. Check your connection and try again.'
+    },
+    az: {
+      langName: 'Azərbaycanca',
+      tagline: 'Anlamadığın mövzunu yaz. Səviyyəyə uyğun aydın izahat al.',
+      topicLabel: 'Nəyi izah etmək lazımdır?',
+      topicPlaceholder: 'məs. Binary search niyə sıralanmış massiv tələb edir?',
+      depthLabel: 'İzahat səviyyəsi',
+      levelBeginner: 'Başlanğıc',
+      levelIntermediate: 'Orta',
+      levelAdvanced: 'İrəli',
+      contextLabel: 'Əlavə kontekst',
+      optional: '(seçim)',
+      contextPlaceholder: 'məs. bu, 1-ci kurs data strukturları fənni üçündür',
+      apiKeyLabel: 'Gemini API açarı',
+      apiKeyPlaceholder: 'Gemini API açarını yapışdır',
+      rememberKey: 'Açarı bu brauzerdə yadda saxla',
+      keyHelpSummary: 'Açarı haradan alım?',
+      keyHelpBefore: 'Pulsuz açarı buradan yarat:',
+      keyHelpAfter: 'Açar yalnız brauzerdən birbaşa Gemini-ə müraciət üçün istifadə olunur — bu tətbiqin backend-i yoxdur və açarı heç yerə göndərmir.',
+      submitBtn: 'İzah et',
+      submitBtnLoading: 'Düşünür…',
+      outputTitle: 'İzahat',
+      emptyTitle: 'Hələ heç nə yoxdur',
+      emptyBody: 'Solda mövzunu yaz və "İzah et" düyməsinə bas — izahat burada görünəcək.',
+      loadingText: 'İzahat hazırlanır…',
+      errNoTopicTitle: 'Hələ izah ediləcək bir şey yoxdur',
+      errNoTopicBody: 'Əvvəlcə solda anlayış və ya sual yaz.',
+      errNoKeyTitle: 'API açarı yoxdur',
+      errNoKeyBody: 'Cavab yaratmaq üçün Gemini API açarını yapışdır.',
+      errRejectedTitle: 'Sorğu rədd edildi',
+      errRejectedBody: 'API açarının düzgün olduğuna əmin ol. Detallar:',
+      errRateTitle: 'Limit aşıldı',
+      errRateBody: 'Hazırda çox sorğu göndərilib — bir az gözlə və yenidən cəhd et.',
+      errGenericTitle: 'Nəsə səhv getdi',
+      errEmptyTitle: 'Boş cavab',
+      errEmptyBody: 'Model heç bir mətn qaytarmadı. Mövzunu fərqli şəkildə yaz və yenidən cəhd et.',
+      errNetworkTitle: 'Şəbəkə xətası',
+      errNetworkBody: 'Gemini API-ə çatmaq mümkün olmadı. İnternet bağlantını yoxla və yenidən cəhd et.'
+    }
+  };
+
+  function t(key){ return I18N[lang][key] ?? I18N.en[key] ?? key; }
+
+  function applyLanguage(){
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.documentElement.lang = lang;
+    // refresh dynamic bits that aren't plain data-i18n text
+    levelPill.textContent = t('level' + level.charAt(0).toUpperCase() + level.slice(1));
+    if (outputEl.querySelector('.empty-state')) {
+      outputEl.innerHTML = `
+        <div class="empty-state">
+          <strong>${t('emptyTitle')}</strong>
+          <span>${t('emptyBody')}</span>
+        </div>`;
+    }
+  }
+
+  langToggle.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    lang = btn.dataset.lang;
+    [...langToggle.children].forEach(b => b.classList.toggle('active', b === btn));
+    applyLanguage();
+  });
+
+  // restore a locally-saved key, if the user opted in previously
+  const savedKey = localStorage.getItem('unpack_gemini_key');
+  if (savedKey) {
+    apiKeyEl.value = savedKey;
+    rememberEl.checked = true;
+  }
+
+  levelRow.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    level = btn.dataset.level;
+    [...levelRow.children].forEach(b => b.classList.toggle('active', b === btn));
+    levelPill.textContent = btn.textContent;
+  });
+
+  rememberEl.addEventListener('change', () => {
+    if (!rememberEl.checked) localStorage.removeItem('unpack_gemini_key');
+  });
+
+  function setLoading(){
+    submitBtn.disabled = true;
+    submitBtn.textContent = t('submitBtnLoading');
+    outputEl.innerHTML = `
+      <div class="spinner-state">
+        <div class="spinner"></div>
+        <span>${t('loadingText')}</span>
+      </div>`;
+  }
+
+  function resetButton(){
+    submitBtn.disabled = false;
+    submitBtn.textContent = t('submitBtn');
+  }
+
+  function showError(title, detail){
+    outputEl.innerHTML = `
+      <div class="error-box">
+        <strong>${title}</strong>
+        ${detail}
+      </div>`;
+  }
+
+  // Minimal, safe markdown-ish renderer for Gemini's plain-text output.
+  // Handles: **bold**, "- " / "* " bullet lists, "Heading:" style lines, paragraphs.
+  function renderExplanation(topic, raw){
+    const lines = raw.split('\n').map(l => l.trim());
+    let html = `<div class="topic-line">${escapeHtml(topic)}</div>`;
+    let inList = false;
+
+    const closeList = () => { if (inList) { html += '</ul>'; inList = false; } };
+    const inline = (t) => escapeHtml(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    for (const line of lines) {
+      if (!line) { closeList(); continue; }
+
+      if (/^[-*]\s+/.test(line)) {
+        if (!inList) { html += '<ul>'; inList = true; }
+        html += `<li>${inline(line.replace(/^[-*]\s+/, ''))}</li>`;
+        continue;
+      }
+
+      // Treat short lines ending in ":" as section headers (e.g. "Key Points:" / "Əsas Nöqtələr:")
+      if (/^[\p{L}0-9 ]{2,40}:$/u.test(line)) {
+        closeList();
+        html += `<h3>${inline(line.replace(/:$/, ''))}</h3>`;
+        continue;
+      }
+
+      closeList();
+      html += `<p>${inline(line)}</p>`;
+    }
+    closeList();
+    outputEl.innerHTML = `<div class="explanation">${html}</div>`;
+  }
+
+  function escapeHtml(str){
+    return str.replace(/[&<>"']/g, (c) => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;'
+    }[c]));
+  }
+
+  async function handleSubmit(){
+    const topic = topicEl.value.trim();
+    const context = contextEl.value.trim();
+    const apiKey = apiKeyEl.value.trim();
+
+    // --- validation ---
+    if (!topic) {
+      showError(t('errNoTopicTitle'), t('errNoTopicBody'));
+      topicEl.focus();
+      return;
+    }
+    if (!apiKey) {
+      showError(t('errNoKeyTitle'), t('errNoKeyBody'));
+      apiKeyEl.focus();
+      return;
+    }
+
+    if (rememberEl.checked) {
+      localStorage.setItem('unpack_gemini_key', apiKey);
+    }
+
+    setLoading();
+
+    const languageLine = lang === 'az'
+      ? "Respond entirely in Azerbaijani (Azərbaycan dilində), including the section labels themselves."
+      : "Respond entirely in English.";
+
+    const systemInstruction =
+      "You are a study assistant that explains academic and technical concepts to students. " +
+      languageLine + " " +
+      "Match the explanation to the requested depth level (beginner, intermediate, or advanced). " +
+      "Structure the reply as plain text using this shape, with each section on its own line ending in a colon: " +
+      "a definition line with one plain-language sentence, a key-points section as short dash-bullets, " +
+      "and an example section with one concrete, everyday example. " +
+      "Keep the language simple, avoid unexplained jargon, and never pad the reply with disclaimers or apologies.";
+
+    const userPrompt =
+      `Explain this concept: "${topic}"\n` +
+      `Depth level: ${level}\n` +
+      (context ? `Student's context: ${context}` : '');
+
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
+            generationConfig: { temperature: 0.4, maxOutputTokens: 900 }
+          })
+        }
+      );
+
+      if (!res.ok) {
+        let detail = `The API responded with status ${res.status}.`;
+        try {
+          const errBody = await res.json();
+          if (errBody?.error?.message) detail = errBody.error.message;
+        } catch (_) {}
+        if (res.status === 400 || res.status === 403) {
+          showError(t('errRejectedTitle'), `${t('errRejectedBody')} ${escapeHtml(detail)}`);
+        } else if (res.status === 429) {
+          showError(t('errRateTitle'), t('errRateBody'));
+        } else {
+          showError(t('errGenericTitle'), escapeHtml(detail));
+        }
+        return;
+      }
+
+      const data = await res.json();
+      const text = data?.candidates?.[0]?.content?.parts?.map(p => p.text || '').join('') ?? '';
+
+      if (!text.trim()) {
+        showError(t('errEmptyTitle'), t('errEmptyBody'));
+        return;
+      }
+
+      renderExplanation(topic, text.trim());
+
+    } catch (err) {
+      showError(t('errNetworkTitle'), t('errNetworkBody'));
+    } finally {
+      resetButton();
+    }
+  }
+
+  submitBtn.addEventListener('click', handleSubmit);
+  topicEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleSubmit();
+  });
+
+  applyLanguage();
+</script>
+</body>
+</html>

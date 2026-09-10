@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment secrets — never commit real keys
+.env
+!.env.example
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Node (in case a frontend build step is added later)
+node_modules/
