@@ -129,17 +129,6 @@ def _triage_prompt(text: str, repair: bool = False, error: str = "") -> str:
     return prompt
 
 
-def _stub_category(text: str) -> str:
-    lowered = text.lower()
-    if any(word in lowered for word in ("charged", "invoice", "payment", "refund")):
-        return "billing"
-    if any(word in lowered for word in ("crash", "error", "broken", "fail")):
-        return "bug"
-    if any(word in lowered for word in ("add", "feature", "would be useful", "please support")):
-        return "feature"
-    return "other"
-
-
 def _stub_judgement(category: str = "other") -> Judgement:
     allowed = {"billing", "bug", "feature", "other"}
     category = category if category in allowed else "other"
@@ -388,8 +377,8 @@ def triage(payload: TriageRequest, request: Request):
         raise HTTPException(status_code=422, detail="text cannot be blank")
 
     stub_category = request.headers.get("X-LLM-Stub")
-    if stub_category or os.getenv("LLM_STUB_MODE", "0") == "1":
-        result = _stub_judgement(stub_category or _stub_category(text))
+    if stub_category:
+        result = _stub_judgement(stub_category)
         log_llm_cost("stub")
         return TriageResponse(**result.model_dump(), meta={"provider": "stub", "repaired": False})
 
