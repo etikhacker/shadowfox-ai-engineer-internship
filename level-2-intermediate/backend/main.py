@@ -7,10 +7,15 @@ answer that is grounded strictly in those chunks.
 """
 
 import io
+import json
 import os
 import re
+import time
 import uuid
-from typing import Any, Dict, List, Optional
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Literal, Optional
+
+from fastapi import Request
 
 import faiss
 import numpy as np
@@ -32,7 +37,10 @@ CHUNK_SIZE = 900       # characters per chunk — see README for the reasoning
 CHUNK_OVERLAP = 150    # characters carried into the next chunk
 TOP_K = 4              # chunks retrieved per question
 
-app = FastAPI(title="Grounded — Document Q&A API", version="1.0.0")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PROMPT_PATH = os.path.join(BASE_DIR, "prompts", "triage_v1.txt")
+
+app = FastAPI(title="Grounded — Document Q&A API", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -73,6 +81,131 @@ class SourceChunk(BaseModel):
 class AskResponse(BaseModel):
     answer: str
     sources: List[SourceChunk]
+
+
+# ----------------------------------------------------- LLM judgement schemas --
+
+TRIAGE_CATEGORIES = Literal["billing", "bug", "feature", "other"]
+URGENCY_LEVELS = Literal["low", "normal", "high"]
+TEAMS = Literal["support", "engineering", "product", "other"]
+
+
+class TriageRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=2000)
+
+
+class Judgement(BaseModel):
+    category: TRIAGE_CATEGORIES
+    urgency: URGENCY_LEVELS
+    suggested_team: TEAMS
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    reason: str = Field(..., min_length=1, max_length=240)
+
+
+class TriageResponse(Judgement):
+    meta: Dict[str, Any]
+
+
+def retryable_status(status_code: int) -> bool:
+    return status_code == 429 or 500 <= status_code <= 599
+
+
+def parse_judgement(raw: Any) -> Judgement:
+    if isinstance(raw, str):
+        raw = json.loads(raw)
+    if not isinstance(raw, dict):
+        raise ValueError("LLM output must be a JSON object")
+    return Judgement.model_validate(raw)
+
+
+def _triage_prompt(text: str, repair: bool = False, error: str = "") -> str:
+    with open(PROMPT_PATH, encoding="utf-8") as handle:
+        template = handle.read()
+    prompt = template.replace("{{text}}", text)
+    if repair:
+        prompt += f"\nPrevious output failed validation: {error}\nReturn only corrected JSON."
+    else:
+        prompt += "\nReturn only one JSON object and no markdown."
+    return prompt
+
+
+def _stub_judgement(category: str = "other") -> Judgement:
+    allowed = {"billing", "bug", "feature", "other"}
+    category = category if category in allowed else "other"
+    team = {"billing": "support", "bug": "engineering", "feature": "product", "other": "other"}[category]
+    urgency = "high" if category == "bug" else "normal"
+    return Judgement(
+        category=category,
+        urgency=urgency,
+        suggested_team=team,
+        confidence=0.98,
+        reason=f"Stub classification for the {category} category.",
+    )
+
+
+def call_llm(prompt: str, repair: bool = False) -> str:
+    if os.getenv("LLM_ENABLED", "1") != "1":
+        raise RuntimeError("LLM integration is disabled by the kill switch.")
+    api_key = os.getenv("OPENROUTER_API_KEY", "")
+    if not api_key:
+        raise RuntimeError("OPENROUTER_API_KEY is not configured on the server.")
+    timeout = float(os.getenv("LLM_TIMEOUT_SECONDS", "8"))
+    max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
+    body = {
+        "model": os.getenv("LLM_MODEL", "openrouter/free"),
+        "messages": [
+            {"role": "system", "content": "You are a strict JSON classification service."},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0,
+        "response_format": {"type": "json_object"},
+    }
+    url = os.getenv("LLM_BASE_URL", "https://openrouter.ai/api/v1") + "/chat/completions"
+    last_error = "unknown provider error"
+    for attempt in range(max_retries + 1):
+        try:
+            response = requests.post(
+                url,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json=body,
+                timeout=timeout,
+            )
+            if response.ok:
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+            last_error = f"provider returned HTTP {response.status_code}"
+            if not retryable_status(response.status_code) or attempt >= max_retries:
+                break
+        except requests.RequestException as exc:
+            last_error = str(exc)
+            if attempt >= max_retries:
+                break
+        time.sleep(min(0.25 * (2 ** attempt), 1.0))
+    raise RuntimeError(last_error)
+
+
+def judge_text(text: str) -> Judgement:
+    prompt = _triage_prompt(text)
+    raw = call_llm(prompt)
+    try:
+        return parse_judgement(raw)
+    except (ValueError, json.JSONDecodeError) as exc:
+        repaired = call_llm(_triage_prompt(text, repair=True, error=str(exc)), repair=True)
+        return parse_judgement(repaired)
+
+
+def log_llm_cost(provider: str, repair: bool = False) -> None:
+    path = os.getenv("COST_LOG_PATH", "llm-cost.jsonl")
+    record = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "endpoint": "/triage",
+        "provider": provider,
+        "model": os.getenv("LLM_MODEL", "openrouter/free"),
+        "repair": repair,
+        "estimated_cost_usd": 0.0,
+    }
+    with open(path, "a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record) + "\n")
 
 
 # ------------------------------------------------------------ vector store --
@@ -236,6 +369,28 @@ def generate_answer(question: str, context_blocks: List[str], lang: str = "en") 
 
 
 # -------------------------------------------------------------------- routes --
+
+@app.post("/triage", response_model=TriageResponse)
+def triage(payload: TriageRequest, request: Request):
+    text = payload.text.strip()
+    if not text:
+        raise HTTPException(status_code=422, detail="text cannot be blank")
+
+    stub_category = request.headers.get("X-LLM-Stub")
+    if stub_category:
+        result = _stub_judgement(stub_category)
+        log_llm_cost("stub")
+        return TriageResponse(**result.model_dump(), meta={"provider": "stub", "repaired": False})
+
+    if os.getenv("LLM_ENABLED", "1") != "1":
+        raise HTTPException(status_code=503, detail="LLM integration is disabled by the kill switch.")
+    try:
+        result = judge_text(text)
+        log_llm_cost(os.getenv("LLM_PROVIDER", "openrouter"))
+        return TriageResponse(**result.model_dump(), meta={"provider": os.getenv("LLM_PROVIDER", "openrouter"), "repaired": False})
+    except (RuntimeError, ValueError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=502, detail=f"Judgement provider failed: {str(exc)[:240]}") from exc
+
 
 @app.get("/health")
 def health():
